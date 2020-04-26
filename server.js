@@ -69,7 +69,7 @@ const start = () => {
 
 const viewAll = () => {
 
-    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN manager ON employee.id = manager.employee_id";
+    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN manager ON employee.manager_id = manager.employee_id";
 
     connection.query(sql, function(err, res) {
         if (err) throw err;  
@@ -239,7 +239,7 @@ const addEmp = () => {
 
                 for(let i=0; i < result.length; i++) {
                     if(answer.manager === result[i].name) {
-                        managerID = result[i].name;
+                        managerID = result[i].employee_id;
                     } else {
                         managerID = null;
                     };
@@ -278,8 +278,20 @@ const removeEmp = () => {
                 choices: empArray
             }
         ]).then(function(answer) {
+
+            let firstName = "";
+            let lastName = "";
+            for(let i=0; i < res.length; i++) {
+                if(answer.name === `${res[i].first_name} ${res[i].last_name}`) {
+                    firstName = res[i].first_name;
+                    lastName = res[i].last_name;
+                }
+            };
             
-            console.log(answer);
+            connection.query("DELETE FROM employee WHERE ?", {first_name: firstName}, function (err, res) {
+                if (err) throw err;
+                start();
+            });
 
         });
     });
@@ -318,38 +330,47 @@ const addRole = () => {
     connection.query("SELECT * FROM role", function(err, res) {
         if (err) throw err;
 
-        inquirer.prompt([
-            {
-                name: "role",
-                type: "input",
-                message: "What role would you like to add?"
-            },
-            {
-                name: "salary",
-                type: "input",
-                message: "What is the yearly salary for this role?"
-            },
-            {
-                name: "dep",
-                type: "input",
-                message: "What department does this role work in?"
-            }
-        ]).then(function(answer) {
+        connection.query("SELECT * FROM department", function(err, res) {
 
-            connection.query("SELECT * FROM department", function(err, res) {
-                if (err) throw err;
+            let depArray = [];
+            for(let i=0; i < res.length; i++) {
+                depArray.push(res[i].dep_name);
+            };
 
-                let id = "";
-
-                for(let i=0; i < res.length; i++) {
-                    if(answer.dep === res[i].dep_name) {
-                        id = res[i].id;
-                    };
-                };
-                
-                connection.query("INSERT INTO role SET ?", {title: answer.role, salary: answer.salary, department_id: id}, function (err, res) {
+            inquirer.prompt([
+                {
+                    name: "role",
+                    type: "input",
+                    message: "What role would you like to add?"
+                },
+                {
+                    name: "salary",
+                    type: "input",
+                    message: "What is the yearly salary for this role?"
+                },
+                {
+                    name: "dep",
+                    type: "list",
+                    message: "What department does this role work in?",
+                    choices: depArray
+                }
+            ]).then(function(answer) {
+    
+                connection.query("SELECT * FROM department", function(err, res) {
                     if (err) throw err;
-                    start();
+    
+                    let id = "";
+    
+                    for(let i=0; i < res.length; i++) {
+                        if(answer.dep === res[i].dep_name) {
+                            id = res[i].id;
+                        };
+                    };
+                    
+                    connection.query("INSERT INTO role SET ?", {title: answer.role, salary: answer.salary, department_id: id}, function (err, res) {
+                        if (err) throw err;
+                        start();
+                    });
                 });
             });
         });
