@@ -33,16 +33,33 @@ connection.connect(function(err) {
 // WHERE department.dep_name = Marketing
 
 const test = () => {
-    connection.query("SELECT * FROM employee", function(err, res) {
+    connection.query("SELECT * FROM role", function(err, res) {
         if (err) throw err;
 
-        let empArray = [];
-    
-        for(let i=0; i < res.length; i++) {
-            empArray.push(`${res[i].first_name} ${res[i].last_name}`);
-        };
-        console.log(empArray);
-});
+        inquirer.prompt([
+            {
+                name: "dep",
+                type: "input",
+                message: "What department does this role work in?"
+            }
+        ]).then(function(answer) {
+
+            connection.query("SELECT * FROM department", function(err, res) {
+                if (err) throw err;
+
+                let id = "";
+
+                for(let i=0; i < res.length; i++) {
+                    if(answer.dep === res[i].dep_name) {
+                        id = res[i].id;
+                    };
+                };
+
+                console.log(id);
+            });
+
+        });
+    });
 };
 
 

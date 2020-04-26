@@ -35,7 +35,7 @@ const start = () => {
             name: "start",
             type: "list",
             message: "What would you like to do?",
-            choices: ["View All Employees", "View Employees By Departments", "View Employees By Role", "Add Employee", "Remove Employee", "Update Employee Department", "Update Employee Role", "Update Employee Manager", "EXIT"]
+            choices: ["View All Employees", "View Employees By Departments", "View Employees By Role", "Add Employee", "Remove Employee", "Add Department", "Add Role", "Update Employee Department", "Update Employee Role", "Update Employee Manager", "EXIT"]
         }
     ]).then(function(answer) {
         if(answer.start === "View All Employees") {  
@@ -48,6 +48,10 @@ const start = () => {
             addEmp();
         } else if(answer.start === "Remove Employee") {
             removeEmp();
+        } else if(answer.start === "Add Department") {
+            addDep();
+        } else if(answer.start === "Add Role") {
+            addRole();
         } else if(answer.start === "Update Employee Department") {
             start();
         } else if(answer.start === "Update Employee Role") {
@@ -176,7 +180,7 @@ const viewRole = () => {
 
 
 //========================================================================================
-// ADD function for prompt to allow user to select with data to view from server
+// ADD EMPLOYEE function for prompt to allow user to select with data to view from server
 
 const addEmp = () => {
 
@@ -189,13 +193,13 @@ const addEmp = () => {
             titleArray.push(res[i].title);
         };
 
-        connection.query("SELECT * FROM manager", function(err, res) {
+        connection.query("SELECT * FROM manager", function(err, result) {
             if (err) throw err;
 
             let namesArray = ["None"];
 
-            for(let i=0; i < res.length; i++) {
-                namesArray.push(res[i].name);
+            for(let i=0; i < result.length; i++) {
+                namesArray.push(result[i].name);
             };
 
             inquirer.prompt([
@@ -222,8 +226,29 @@ const addEmp = () => {
                     choices: namesArray
                 }
             ]).then(function(answer) {
+
+                let roleID = "";
+
+                for(let i=0; i < res.length; i++) {
+                    if(answer.role === res[i].title) {
+                        roleID = res[i].id;
+                    };
+                };
+
+                let managerID = "";
+
+                for(let i=0; i < result.length; i++) {
+                    if(answer.manager === result[i].name) {
+                        managerID = result[i].name;
+                    } else {
+                        managerID = null;
+                    };
+                };
                 
-                console.log(answer);
+                connection.query("INSERT INTO employee SET ?", {first_name: answer.firstName, last_name: answer.lastName, role_id: roleID, manager_id: managerID}, function (err, res) {
+                    if (err) throw err;
+                    start();
+                });
     
             });
         });
@@ -232,7 +257,7 @@ const addEmp = () => {
 
 
 //========================================================================================
-// ADD function for prompt to allow user to select with data to view from server
+// REMOVE EMPLOYEE function for prompt to allow user to select with data to view from server
 
 const removeEmp = () => {
 
@@ -256,6 +281,77 @@ const removeEmp = () => {
             
             console.log(answer);
 
+        });
+    });
+};
+
+//========================================================================================
+// ADD DEPARTMENT function for prompt to allow user to select with data to view from server
+
+const addDep = () => {
+
+    connection.query("SELECT * FROM department", function(err, res) {
+        if (err) throw err;
+
+        inquirer.prompt([
+            {
+                name: "department",
+                type: "input",
+                message: "What department would you like to add?"
+            }
+        ]).then(function(answer) {
+            
+            connection.query("INSERT INTO department SET ?", {dep_name: answer.department}, function (err, res) {
+                if (err) throw err;
+                start();
+            });
+
+        });
+    });
+};
+
+//========================================================================================
+// ADD ROLE function for prompt to allow user to select with data to view from server
+
+const addRole = () => {
+
+    connection.query("SELECT * FROM role", function(err, res) {
+        if (err) throw err;
+
+        inquirer.prompt([
+            {
+                name: "role",
+                type: "input",
+                message: "What role would you like to add?"
+            },
+            {
+                name: "salary",
+                type: "input",
+                message: "What is the yearly salary for this role?"
+            },
+            {
+                name: "dep",
+                type: "input",
+                message: "What department does this role work in?"
+            }
+        ]).then(function(answer) {
+
+            connection.query("SELECT * FROM department", function(err, res) {
+                if (err) throw err;
+
+                let id = "";
+
+                for(let i=0; i < res.length; i++) {
+                    if(answer.dep === res[i].dep_name) {
+                        id = res[i].id;
+                    };
+                };
+                
+                connection.query("INSERT INTO role SET ?", {title: answer.role, salary: answer.salary, department_id: id}, function (err, res) {
+                    if (err) throw err;
+                    start();
+                });
+            });
         });
     });
 };
