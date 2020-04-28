@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+const chalkAnimation = require('chalk-animation');
+
+var figlet = require('figlet');
+
 const cTable = require('console.table');
 
 const mysql = require("mysql");
@@ -22,9 +26,31 @@ const connection = mysql.createConnection({
 // CONNECT to sql server
 connection.connect(function(err) {
     if (err) throw err;
-    console.log("connected as id " + connection.threadId + "\n");
-    // Call function with first prompt
-    start();
+    
+    // CREATE title in terminal
+    figlet('STAFF DIRECTORY', function(err, data) {
+        if (err) {
+            console.log('Something went wrong...');
+            console.dir(err);
+            return;
+        }
+        animation("\n\n" + data + "\n\n");
+    });
+
+    const animation = (data) => {
+
+        
+        const rainbow = chalkAnimation.karaoke(data, 2);
+
+        setTimeout(() => {
+            rainbow.stop(); // Animation stops
+        }, 2700);
+
+        setTimeout(() => {
+            start(); // Application starts
+        }, 2700);
+    };
+
 });
 
 //========================================================================================
@@ -69,7 +95,7 @@ const start = () => {
 
 const viewAll = () => {
 
-    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN manager ON employee.manager_id = manager.employee_id";
+    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN manager ON employee.manager_id = manager.employee_id ORDER BY id";
 
     connection.query(sql, function(err, res) {
         if (err) throw err;  
@@ -106,7 +132,7 @@ const viewDep = () => {
         ]).then(function(answer) {
             for(let i=0; i<depArray.length; i++) {
                 if(answer.all === depArray[i]) {
-                    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN manager ON employee.id = manager.employee_id LEFT JOIN department ON role.department_id = department.id";
+                    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN manager ON employee.id = manager.employee_id LEFT JOIN department ON role.department_id = department.id ORDER BY id";
 
                     let depSelect = [];
 
@@ -154,7 +180,7 @@ const viewRole = () => {
         ]).then(function(answer) {
             for(let i=0; i<roleArray.length; i++) {
                 if(answer.all === roleArray[i]) {
-                    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN manager ON employee.id = manager.employee_id LEFT JOIN department ON role.department_id = department.id";
+                    var sql = "SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS title, department.dep_name AS department, role.salary AS salary, manager.name AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN manager ON employee.id = manager.employee_id LEFT JOIN department ON role.department_id = department.id ORDER BY id";
 
                     let roleSelect = [];
 
@@ -196,7 +222,7 @@ const addEmp = () => {
         connection.query("SELECT * FROM manager", function(err, result) {
             if (err) throw err;
 
-            let namesArray = ["None"];
+            let namesArray = ["None.", "This person is a manager."];
 
             for(let i=0; i < result.length; i++) {
                 namesArray.push(result[i].name);
@@ -247,6 +273,26 @@ const addEmp = () => {
                 
                 connection.query("INSERT INTO employee SET ?", {first_name: answer.firstName, last_name: answer.lastName, role_id: roleID, manager_id: managerID}, function (err, res) {
                     if (err) throw err;
+                    if(answer.manager === "This person is a manager.") {
+
+                        let employeeID = "";
+
+                        connection.query("SELECT * FROM employee", function(err, res) {
+                            if (err) throw err;
+                            for(let i=0; i < res.length; i++){
+                                if(answer.firstName === res[i].first_name) {
+
+                                    employeeID = res[i].id;
+
+                                    connection.query("INSERT INTO manager SET ?", {name: `${answer.firstName} ${answer.lastName}`, employee_id: employeeID}, function (err, res) {
+                                        if (err) throw err;
+                                    });
+                                }
+                            }
+                            
+                        });
+                    };
+
                     start();
                 });
     
@@ -254,7 +300,6 @@ const addEmp = () => {
         });
     });
 };
-
 
 //========================================================================================
 // REMOVE EMPLOYEE function for prompt to allow user to select with data to view from server

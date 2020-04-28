@@ -35,35 +35,10 @@ connection.connect(function(err) {
 const test = () => {
     connection.query("SELECT * FROM employee", function(err, res) {
         if (err) throw err;
-
-        let empArray = [];
-    
-        for(let i=0; i < res.length; i++) {
-            empArray.push(`${res[i].first_name} ${res[i].last_name}`);
-        };
-
-        inquirer.prompt([
-            {
-                name: "name",
-                type: "list",
-                message: "Which employee which you like to remove?",
-                choices: empArray
-            }
-        ]).then(function(answer) {
-
-            let firstName = "";
-            let lastName = "";
-            for(let i=0; i < res.length; i++) {
-                if(answer.name === `${res[i].first_name} ${res[i].last_name}`) {
-                    firstName = res[i].first_name;
-                    lastName = res[i].last_name;
-                }
-            };
-            
-            console.log(firstName);
-            console.log(lastName);
-
-        });
+        for(let i=0; i < res.length; i++){
+            console.log(res[i].id);
+        }
+        
     });
 };
 

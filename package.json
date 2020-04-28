@@ -4,8 +4,10 @@
   "description": "Client side application for keeping a directory of staff departments information.",
   "main": "server.js",
   "dependencies": {
+    "chalk-animation": "^1.6.0",
     "console.table": "^0.10.0",
     "dotenv": "^8.2.0",
+    "figlet": "^1.4.0",
     "inquirer": "^7.1.0",
     "mysql": "^2.18.1"
   },
