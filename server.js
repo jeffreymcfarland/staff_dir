@@ -81,7 +81,7 @@ const start = () => {
         } else if(answer.start === "Update Employee Role") {
             updateEmpRole();
         } else if(answer.start === "Update Employee Manager") {
-            start();
+            updateEmpMan();
         } else {
             connection.end();
         };
@@ -474,6 +474,74 @@ const updateEmpRole = () => {
                 };
     
                 connection.query("UPDATE employee SET role_id = ? WHERE id = ?", [roleID, empID], function (err, result) {
+                    if (err) throw err;
+
+                    if(answer.update === "Manager") {
+                        connection.query("INSERT INTO manager SET ?", {name: answer.selected, employee_id: empID}, function (err, res) {
+                            if (err) throw err;
+                        });
+                    };
+
+                    console.log("Role Updated!");
+                    start();
+                });
+               
+            });
+        })
+    });
+};
+
+//========================================================================================
+// UPDATE EMPLOYEE function for prompt to allow user to select with data to view from server
+
+const updateEmpMan = () => {
+
+    connection.query("SELECT * FROM employee", function(err, res) {
+        if (err) throw err;
+
+        let selectArray = [];
+        for(let i=0; i < res.length; i++) {
+            selectArray.push(`${res[i].first_name} ${res[i].last_name}`);
+        };
+
+        connection.query("SELECT * FROM manager", function(err, result) {
+            if (err) throw err;
+
+            let manArray = [];
+            for(let i=0; i < result.length; i++) {
+                manArray.push(result[i].name);
+            };
+
+            inquirer.prompt([
+                {
+                    name: "selected",
+                    type: "list",
+                    message: "Which employee's manager would you like to update?",
+                    choices: selectArray
+                },
+                {
+                    name: "update",
+                    type: "list",
+                    message: "Which staff member is their new manager?",
+                    choices: manArray
+                }
+            ]).then(function(answer) {
+    
+                let empID = "";
+                for(let i=0; i < res.length; i++) {
+                    if (answer.selected === `${res[i].first_name} ${res[i].last_name}`) {
+                        empID = res[i].id;
+                    };
+                };
+    
+                let managerID = "";
+                for(let i=0; i < result.length; i++) {
+                    if (answer.update === result[i].name) {
+                        managerID = result[i].employee_id;
+                    };
+                };
+    
+                connection.query("UPDATE employee SET manager_id = ? WHERE id = ?", [managerID, empID], function (err, result) {
                     if (err) throw err;
                     console.log("Role Updated!");
                     start();
