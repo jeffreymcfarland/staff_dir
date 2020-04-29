@@ -61,7 +61,7 @@ const start = () => {
             name: "start",
             type: "list",
             message: "What would you like to do?",
-            choices: ["View All Employees", "View Employees By Departments", "View Employees By Role", "Add Employee", "Remove Employee", "Add Department", "Add Role", "Update Employee Role", "Update Employee Manager", "EXIT"]
+            choices: ["View All Employees", "View Employees By Departments", "View Employees By Role", "Add Employee", "Remove Employee", "Add Department", "Remove Department", "Add Role", "Remove Role", "Update Employee Role", "Update Employee Manager", "EXIT"]
         }
     ]).then(function(answer) {
         if(answer.start === "View All Employees") {  
@@ -76,8 +76,12 @@ const start = () => {
             removeEmp();
         } else if(answer.start === "Add Department") {
             addDep();
+        } else if(answer.start === "Remove Department") {
+            removeDep();
         } else if(answer.start === "Add Role") {
             addRole();
+        } else if(answer.start === "Remove Role") {
+            removeRole();
         } else if(answer.start === "Update Employee Role") {
             updateEmpRole();
         } else if(answer.start === "Update Employee Manager") {
@@ -328,7 +332,7 @@ const removeEmp = () => {
                 if(answer.name === `${res[i].first_name} ${res[i].last_name}`) {
                     firstName = res[i].first_name;
                     lastName = res[i].last_name;
-                }
+                };
             };
             
             connection.query("DELETE FROM employee WHERE ?", {first_name: firstName}, function (err, res) {
@@ -360,6 +364,38 @@ const addDep = () => {
             connection.query("INSERT INTO department SET ?", {dep_name: answer.department}, function (err, res) {
                 if (err) throw err;
                 console.log("Department Added!");
+                start();
+            });
+
+        });
+    });
+};
+
+//========================================================================================
+// REMOVE DEPARTMENT function 
+
+const removeDep = () => {
+
+    connection.query("SELECT * FROM department", function(err, res) {
+        if (err) throw err;
+
+        let depArray = [];
+        for( let i=0; i < res.length; i++) {
+            depArray.push(res[i].dep_name);
+        };
+
+        inquirer.prompt([
+            {
+                name: "department",
+                type: "list",
+                message: "Which department would you like to remove?",
+                choices: depArray
+            }
+        ]).then(function(answer) {
+            
+            connection.query("DELETE FROM department WHERE ?", {dep_name: answer.department}, function (err, res) {
+                if (err) throw err;
+                console.log("Department Removed!");
                 start();
             });
 
@@ -419,6 +455,38 @@ const addRole = () => {
                     });
                 });
             });
+        });
+    });
+};
+
+//========================================================================================
+// REMOVE ROLE function 
+
+const removeRole = () => {
+
+    connection.query("SELECT * FROM role", function(err, res) {
+        if (err) throw err;
+
+        let roleArray = [];
+        for( let i=0; i < res.length; i++) {
+            roleArray.push(res[i].title);
+        };
+
+        inquirer.prompt([
+            {
+                name: "role",
+                type: "list",
+                message: "Which role would you like to remove?",
+                choices: roleArray
+            }
+        ]).then(function(answer) {
+            
+            connection.query("DELETE FROM role WHERE ?", {title: answer.role}, function (err, res) {
+                if (err) throw err;
+                console.log("Role Removed!");
+                start();
+            });
+
         });
     });
 };
@@ -485,9 +553,9 @@ const updateEmpRole = () => {
                     console.log("Role Updated!");
                     start();
                 });
-               
+            
             });
-        })
+        });
     });
 };
 
