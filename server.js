@@ -1,26 +1,14 @@
-require('dotenv').config();
+require("dotenv").config();
 
-const chalkAnimation = require('chalk-animation');
+const chalkAnimation = require("chalk-animation");
 
-var figlet = require('figlet');
+const figlet = require("figlet");
 
-const cTable = require('console.table');
+const cTable = require("console.table");
 
-const mysql = require("mysql");
+const connection = require("./js/connection.js");
 
 const inquirer = require("inquirer");
-
-const connection = mysql.createConnection({
-  host: `${process.env.JM_HOST}`,
-
-  port: process.env.JM_PORT,
-
-  user: `${process.env.JM_USER}`,
-
-  // Your password
-  password: `${process.env.JM_PASSWORD}`,
-  database: `${process.env.JM_DATABASE}`
-});
 
 //========================================================================================
 // CONNECT to sql server
@@ -28,12 +16,9 @@ connection.connect(function(err) {
     if (err) throw err;
     
     // CREATE title in terminal
-    figlet('STAFF DIRECTORY', function(err, data) {
-        if (err) {
-            console.log('Something went wrong...');
-            console.dir(err);
-            return;
-        }
+    figlet("STAFF DIRECTORY", function(err, data) {
+        if (err) throw err;
+
         animation("\n\n" + data + "\n\n");
     });
 
@@ -55,6 +40,8 @@ connection.connect(function(err) {
 
 //========================================================================================
 // START function to initiate inquirer prompt
+
+
 const start = () => {
     inquirer.prompt([
         {
@@ -90,10 +77,10 @@ const start = () => {
             connection.end();
         };
     });
-};
+}
 
 //========================================================================================
-// VIEW ALL function for prompt to allow user to select which data to view from server
+// VIEW ALL function
 
 const viewAll = () => {
 
@@ -111,7 +98,7 @@ const viewAll = () => {
 };
 
 //========================================================================================
-// VIEW DEPARTMENT function for prompt to allow user to select which data to view from server
+// VIEW BY DEPARTMENT function
 
 const viewDep = () => {
 
@@ -159,7 +146,7 @@ const viewDep = () => {
 };
 
 //========================================================================================
-// VIEW ROLE function for prompt to allow user to select which data to view from server
+// VIEW BY ROLE function 
 
 const viewRole = () => {
 
@@ -208,7 +195,7 @@ const viewRole = () => {
 
 
 //========================================================================================
-// ADD EMPLOYEE function for prompt to allow user to select with data to view from server
+// ADD NEW EMPLOYEE function
 
 const addEmp = () => {
 
@@ -304,14 +291,14 @@ const addEmp = () => {
 };
 
 //========================================================================================
-// REMOVE EMPLOYEE function for prompt to allow user to select with data to view from server
+// REMOVE EMPLOYEE function
 
 const removeEmp = () => {
 
     connection.query("SELECT * FROM employee", function(err, res) {
         if (err) throw err;
 
-        let empArray = [];
+        let empArray = ["CANCEL"];
     
         for(let i=0; i < res.length; i++) {
             empArray.push(`${res[i].first_name} ${res[i].last_name}`);
@@ -326,27 +313,28 @@ const removeEmp = () => {
             }
         ]).then(function(answer) {
 
-            let firstName = "";
-            let lastName = "";
-            for(let i=0; i < res.length; i++) {
-                if(answer.name === `${res[i].first_name} ${res[i].last_name}`) {
-                    firstName = res[i].first_name;
-                    lastName = res[i].last_name;
-                };
-            };
-            
-            connection.query("DELETE FROM employee WHERE ?", {first_name: firstName}, function (err, res) {
-                if (err) throw err;
-                console.log("Employee Removed!");
+            if(answer.name === "CANCEL") {
                 start();
-            });
-
+            } else {
+                let empID = "";
+                for(let i=0; i < res.length; i++) {
+                    if(answer.name === `${res[i].first_name} ${res[i].last_name}`) {
+                        empID = res[i].id;
+                    };
+                };
+                
+                connection.query("DELETE FROM employee WHERE ?", {id: empID}, function (err, res) {
+                    if (err) throw err;
+                    console.log("Employee Removed!");
+                    start();
+                });
+            };
         });
     });
 };
 
 //========================================================================================
-// ADD DEPARTMENT function for prompt to allow user to select with data to view from server
+// ADD NEW DEPARTMENT function
 
 const addDep = () => {
 
@@ -379,7 +367,7 @@ const removeDep = () => {
     connection.query("SELECT * FROM department", function(err, res) {
         if (err) throw err;
 
-        let depArray = [];
+        let depArray = ["CANCEL"];
         for( let i=0; i < res.length; i++) {
             depArray.push(res[i].dep_name);
         };
@@ -392,19 +380,22 @@ const removeDep = () => {
                 choices: depArray
             }
         ]).then(function(answer) {
-            
-            connection.query("DELETE FROM department WHERE ?", {dep_name: answer.department}, function (err, res) {
-                if (err) throw err;
-                console.log("Department Removed!");
-                start();
-            });
 
+            if(answer.department === "CANCEL") {
+                start();
+            } else {
+                connection.query("DELETE FROM department WHERE ?", {dep_name: answer.department}, function (err, res) {
+                    if (err) throw err;
+                    console.log("Department Removed!");
+                    start();
+                });
+            };
         });
     });
 };
 
 //========================================================================================
-// ADD ROLE function for prompt to allow user to select with data to view from server
+// ADD NEW ROLE function
 
 const addRole = () => {
 
@@ -467,7 +458,7 @@ const removeRole = () => {
     connection.query("SELECT * FROM role", function(err, res) {
         if (err) throw err;
 
-        let roleArray = [];
+        let roleArray = ["CANCEL"];
         for( let i=0; i < res.length; i++) {
             roleArray.push(res[i].title);
         };
@@ -480,19 +471,22 @@ const removeRole = () => {
                 choices: roleArray
             }
         ]).then(function(answer) {
-            
-            connection.query("DELETE FROM role WHERE ?", {title: answer.role}, function (err, res) {
-                if (err) throw err;
-                console.log("Role Removed!");
-                start();
-            });
 
+            if(answer.role === "CANCEL") {
+                start();
+            } else {
+                connection.query("DELETE FROM role WHERE ?", {title: answer.role}, function (err, res) {
+                    if (err) throw err;
+                    console.log("Role Removed!");
+                    start();
+                });
+            };
         });
     });
 };
 
 //========================================================================================
-// UPDATE EMPLOYEE function for prompt to allow user to select with data to view from server
+// UPDATE EMPLOYEE function 
 
 const updateEmpRole = () => {
 
@@ -524,6 +518,12 @@ const updateEmpRole = () => {
                     type: "list",
                     message: "Which of the following is their new role?",
                     choices: roleArray
+                },
+                {
+                    name: "manager",
+                    type: "list",
+                    message: "Is this a manager role?",
+                    choices: ["Yes", "No"]
                 }
             ]).then(function(answer) {
     
@@ -544,7 +544,7 @@ const updateEmpRole = () => {
                 connection.query("UPDATE employee SET role_id = ? WHERE id = ?", [roleID, empID], function (err, result) {
                     if (err) throw err;
 
-                    if(answer.update === "Manager") {
+                    if(answer.manager === "Yes") {
                         connection.query("INSERT INTO manager SET ?", {name: answer.selected, employee_id: empID}, function (err, res) {
                             if (err) throw err;
                         });
@@ -560,7 +560,7 @@ const updateEmpRole = () => {
 };
 
 //========================================================================================
-// UPDATE EMPLOYEE function for prompt to allow user to select with data to view from server
+// UPDATE EMPLOYEE MANAGER function
 
 const updateEmpMan = () => {
 
